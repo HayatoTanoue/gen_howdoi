@@ -278,9 +278,9 @@ def _is_blocked(page):
     return False
 
 
-def _get_links(query):
+def _get_links(query, url=URL):
     search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'google')
-    search_url = _get_search_url(search_engine).format(URL, url_quote(query))
+    search_url = _get_search_url(search_engine).format(url, url_quote(query))
 
     logging.info('Searching %s with URL: %s', search_engine, search_url)
 
@@ -398,8 +398,8 @@ def _get_answer(args, link):  # pylint: disable=too-many-branches
     return text
 
 
-def _get_links_with_cache(query):
-    cache_key = _get_cache_key(query)
+def _get_links_with_cache(query, url=URL):
+    cache_key = _get_cache_key(f"{url}:{query}")
     res = _get_from_cache(cache_key)
     if res:
         logging.info('Using cached links')
@@ -408,7 +408,7 @@ def _get_links_with_cache(query):
         else:
             return res
 
-    links = _get_links(query)
+    links = _get_links(query, url)
     if not links:
         cache.set(cache_key, CACHE_EMPTY_VAL)
 
@@ -422,14 +422,14 @@ def build_splitter(splitter_character='=', splitter_length=80):
     return '\n' + splitter_character * splitter_length + '\n\n'
 
 
-def _get_answers(args):
+def _get_answers(args, url=URL):
     """
     @args: command-line arguments
     returns: array of answers and their respective metadata
              False if unable to get answers
     """
 
-    question_links = _get_links_with_cache(args['query'])
+    question_links = _get_links_with_cache(args['query'], url)
     if not question_links:
         return False
 
@@ -438,7 +438,7 @@ def _get_answers(args):
     question_links = question_links[initial_pos:final_pos]
     search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'google')
 
-    logging.info('Links from %s found on %s: %s', URL, search_engine, len(question_links))
+    logging.info('Links from %s found on %s: %s', url, search_engine, len(question_links))
     logging.info('URL: %s', '\n '.join(question_links))
     logging.info('Answers requested: %s, Starting at position: %s', args["num_answers"], args['pos'])
 
@@ -477,6 +477,20 @@ def _get_answer_worker(args, link):
     result['link'] = link
 
     return result
+
+
+def _get_best_answer_for_site(args, url, label):
+    args_copy = args.copy()
+    args_copy['pos'] = 1
+    args_copy['num_answers'] = 1
+    try:
+        answers = _get_answers(args_copy, url)
+    except BlockError:
+        return None
+    if not answers:
+        return None
+    formatted = _format_answers(args_copy, answers).strip()
+    return f'[{label}] {formatted}'
 
 
 def _clear_cache():
@@ -629,15 +643,51 @@ def howdoi(raw_query):
     logging.info('Fetching answers for query: %s', args["query"])
 
     try:
-        res = _get_answers(args)
-        if not res:
+        url_override = os.getenv('HOWDOI_URL')
+        if url_override:
+            res = _get_answers(args, url_override)
+            if not res:
+                message = NO_RESULTS_MESSAGE
+                if not args['explain']:
+                    message = f'{message} (use --explain to learn why)'
+                res = {'error': message}
+            cache.set(cache_key, res)
+            return _parse_cmd(args, res)
+
+        site_info = [
+            ('stackoverflow.com', 'Stack Overflow'),
+            ('serverfault.com', 'Server Fault'),
+        ]
+        with Pool() as pool:
+            outputs = pool.starmap(
+                _get_best_answer_for_site,
+                [(args, u, l) for u, l in site_info]
+            )
+        outputs = [o for o in outputs if o]
+        if not outputs:
             message = NO_RESULTS_MESSAGE
             if not args['explain']:
                 message = f'{message} (use --explain to learn why)'
             res = {'error': message}
-        cache.set(cache_key, res)
+            cache.set(cache_key, res)
+            return _parse_cmd(args, res)
+
+        answer_text = '\n\n'.join(outputs) + '\n'
+        cache.set(cache_key, answer_text)
+
+        cmd_key = _get_stash_key(args)
+        title = ''.join(args['query'])
+        if args[STASH_SAVE]:
+            _stash_save(cmd_key, title, answer_text)
+            return ''
+        if args[STASH_REMOVE]:
+            _stash_remove(cmd_key, title)
+            return ''
+
+        return answer_text
     except (RequestsConnectionError, SSLError):
         res = {'error': f'Unable to reach {search_engine}. Do you need to use a proxy?\n'}
+        return _parse_cmd(args, res)
     except BlockError:
         BLOCKED_ENGINES.append(search_engine)
         next_engine = next((engine for engine in SUPPORTED_SEARCH_ENGINES if engine not in BLOCKED_ENGINES), None)
@@ -648,7 +698,7 @@ def howdoi(raw_query):
             args['query'] = args['query'].split()
             logging.info('%sRetrying search with %s%s', GREEN, next_engine, END_FORMAT)
             return howdoi(args)
-    return _parse_cmd(args, res)
+        return _parse_cmd(args, res)
 
 
 def get_parser():
