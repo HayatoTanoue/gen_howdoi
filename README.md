@@ -82,7 +82,7 @@ or
 
 ### Commands
 
-    usage: howdoi [-h] [-p POS] [-n NUM] [-a] [-l] [-c] [-x] [-C] [-j] [-v] [-e [ENGINE]]
+    usage: howdoi [-h] [-p POS] [-n NUM] [-a] [-l] [-L] [-c] [-x] [-C] [-j] [-v] [-e [ENGINE]]
     [--save] [--view] [--remove] [--empty] [QUERY ...]
 
     instant coding answers via the command line
@@ -96,6 +96,7 @@ or
       -n NUM, --num NUM     number of answers to return (default: 1)
       -a, --all             display the full text of the answer
       -l, --link            display only the answer link
+      -L, --linkout         add the answer link to the output
       -c, --color           enable colorized output
       -x, --explain         explain how answer was chosen
       -C, --clear-cache     clear the cache

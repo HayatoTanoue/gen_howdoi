@@ -504,6 +504,10 @@ def _format_answers(args, res):
         next_ans = answer["answer"]
         if args["link"]:  # if we only want links
             next_ans = answer["link"]
+        elif args.get("linkout") and answer.get("link"):
+            if not next_ans.endswith("\n"):
+                next_ans += "\n"
+            next_ans += answer["link"]
         formatted_answers.append(next_ans or NO_RESULTS_MESSAGE)
 
     return build_splitter().join(formatted_answers)
@@ -518,6 +522,7 @@ def _get_help_instructions():
         '>>> howdoi {} -a (read entire answer)',
         '>>> howdoi {} -n [number] (retrieve n number of answers)',
         '>>> howdoi {} -l (display only a link to where the answer is from',
+        '>>> howdoi {} -L (add the answer link to the output)',
         '>>> howdoi {} -c (Add colors to the output)',
         '>>> howdoi {} -e (Specify the search engine you want to use e.g google,bing)'
     ]
@@ -670,6 +675,7 @@ def get_parser():
     parser.add_argument('--num-answers', help=argparse.SUPPRESS)
     parser.add_argument('-a', '--all', help='display the full text of the answer', action='store_true')
     parser.add_argument('-l', '--link', help='display only the answer link', action='store_true')
+    parser.add_argument('-L', '--linkout', help='add answer link to the output', action='store_true')
     parser.add_argument('-c', '--color', help='enable colorized output', action='store_true')
     parser.add_argument('-x', '--explain', help='explain how answer was chosen', action='store_true')
     parser.add_argument('-C', '--clear-cache', help='clear the cache',

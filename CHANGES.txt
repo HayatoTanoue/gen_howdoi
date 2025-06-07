@@ -2,6 +2,7 @@
 ------
 -  Update dependency versions
 -  Add support for Python 3.10
+-  Add -L/--linkout option to append answer link
 
 2.0.19
 ------
