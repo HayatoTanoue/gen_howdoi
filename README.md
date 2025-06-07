@@ -112,7 +112,7 @@ or
       HOWDOI_COLORIZE=1
       HOWDOI_DISABLE_CACHE=1
       HOWDOI_DISABLE_SSL=1
-      HOWDOI_SEARCH_ENGINE=google
+      HOWDOI_SEARCH_ENGINE=bing
       HOWDOI_URL=serverfault.com
 
 Using the howdoi stashing feature (for more advanced features view the

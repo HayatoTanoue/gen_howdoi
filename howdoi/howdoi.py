@@ -55,7 +55,7 @@ else:
     SCHEME = 'https://'
     VERIFY_SSL_CERTIFICATE = True
 
-SUPPORTED_SEARCH_ENGINES = ('google', 'bing', 'duckduckgo')
+SUPPORTED_SEARCH_ENGINES = ('bing', 'google', 'duckduckgo')
 
 URL = os.getenv('HOWDOI_URL') or 'stackoverflow.com'
 
@@ -267,7 +267,7 @@ def _extract_links(html, search_engine):
 
 
 def _get_search_url(search_engine):
-    return SEARCH_URLS.get(search_engine, SEARCH_URLS['google'])
+    return SEARCH_URLS.get(search_engine, SEARCH_URLS['bing'])
 
 
 def _is_blocked(page):
@@ -279,7 +279,7 @@ def _is_blocked(page):
 
 
 def _get_links(query):
-    search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'google')
+    search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'bing')
     search_url = _get_search_url(search_engine).format(URL, url_quote(query))
 
     logging.info('Searching %s with URL: %s', search_engine, search_url)
@@ -436,7 +436,7 @@ def _get_answers(args):
     initial_pos = args['pos'] - 1
     final_pos = initial_pos + int(args['num_answers'])
     question_links = question_links[initial_pos:final_pos]
-    search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'google')
+    search_engine = os.getenv('HOWDOI_SEARCH_ENGINE', 'bing')
 
     logging.info('Links from %s found on %s: %s', URL, search_engine, len(question_links))
     logging.info('URL: %s', '\n '.join(question_links))
@@ -606,7 +606,7 @@ def howdoi(raw_query):
     else:
         args = raw_query
 
-    search_engine = args['search_engine'] or os.getenv('HOWDOI_SEARCH_ENGINE') or 'google'
+    search_engine = args['search_engine'] or os.getenv('HOWDOI_SEARCH_ENGINE') or 'bing'
     os.environ['HOWDOI_SEARCH_ENGINE'] = search_engine
     if search_engine not in SUPPORTED_SEARCH_ENGINES:
         supported_search_engines = ', '.join(SUPPORTED_SEARCH_ENGINES)
@@ -658,7 +658,7 @@ def get_parser():
                                        HOWDOI_COLORIZE=1
                                        HOWDOI_DISABLE_CACHE=1
                                        HOWDOI_DISABLE_SSL=1
-                                       HOWDOI_SEARCH_ENGINE=google
+                                      HOWDOI_SEARCH_ENGINE=bing
                                        HOWDOI_URL=serverfault.com
                                      '''),
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -751,7 +751,7 @@ def perform_sanity_check():
     cache = NullCache()
 
     exit_code = 0
-    for engine in ['google']:  # 'bing' and 'duckduckgo' throw various block errors
+    for engine in ['bing']:  # 'duckduckgo' and other engines may throw block errors
         print(f'Checking {engine}...')
         try:
             _sanity_check(engine)

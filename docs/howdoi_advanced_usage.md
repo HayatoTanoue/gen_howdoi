@@ -43,8 +43,8 @@
     Howdoi uses a cache for faster access to previous questions. The
     cache is stored in ~/.cache/howdoi.
   - HOWDOI_DISABLE_SSL=1 - Disables the SSL certificate.
-  - HOWDOI_SEARCH_ENGINE=google - Changes the search engine to your
-    preference (default: google, also supported: bing, duckduckgo).
+  - HOWDOI_SEARCH_ENGINE=bing - Changes the search engine to your
+    preference (default: bing, also supported: google, duckduckgo).
     The -e flag will switch the underlying engine for a single query.
   - HOWDOI_URL=serverfault.com - Changes the source url for answers
     (default: stackoverflow.com, also supported: serverfault.com,
